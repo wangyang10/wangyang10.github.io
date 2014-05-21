@@ -1,4 +1,4 @@
 User-agent: *
-Disallow: 
+Disallow:
 
-Sitemap: http://wangyang10.github.io/sitemap.xml 
+Sitemap: http://wangyang10.github.io/sitemap.xml
