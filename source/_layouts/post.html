@@ -47,3 +47,9 @@ single: true
   {% endif %}
 </aside>
 {% endunless %}
+{% if site.youyan_short_name and site.youyan_comments == true and page.comments == true %}
+	<section>
+		<h1>Comments</h1>
+			<div id="comments" aria-live="polite">{% include post/youyan.html %}</div>
+	</section>
+{% endif %}
