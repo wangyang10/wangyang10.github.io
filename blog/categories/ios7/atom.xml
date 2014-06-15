@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: iOS7 | 洋哥de秘密基地]]></title>
+  <link href="http://wangyang10.github.io/blog/categories/ios7/atom.xml" rel="self"/>
+  <link href="http://wangyang10.github.io/"/>
+  <updated>2014-06-15T18:37:27+08:00</updated>
+  <id>http://wangyang10.github.io/</id>
+  <author>
+    <name><![CDATA[洋哥]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[iOS7自定义页面转换动画]]></title>
+    <link href="http://wangyang10.github.io/blog/2014/06/13/custom-pop-transition-animator/"/>
+    <updated>2014-06-13T10:52:49+08:00</updated>
+    <id>http://wangyang10.github.io/blog/2014/06/13/custom-pop-transition-animator</id>
+    <content type="html"><![CDATA[<p>我们知道iOS7中navigationController中多了一个属性<code>interactivePopGestureRecognizer</code>，它带来了一个交互式的pop动画。让我们不用再去很费劲的自己实现一些pop效果，带来了很大的方便。不过这个系统自带的返回手势也有它局限的地方，比如如果定制了navigationBar的leftItem,该手势就会失效（可以通过重设该gesture的delegate来解决，不过随之而来会导致另外一些问题，详情以及解决方案看<a href="http://keighl.com/post/ios7-interactive-pop-gesture-custom-back-button/">这里</a>）。   还有一个有点缺陷的地方就是，这个手势的响应区只有在屏幕左侧一点点的区域。</p>
+
+<p>所以我一开始想能不能通过扩大<code>interactivePopGestureRecognizer</code>的响应区域来解决问题，调研后发现该手势的实际类型是<code>UIScreenEdgePanGestureRecognizer</code>，这个类型的手势响应区域就是在4个方向的侧边一小块儿地方，想扩大响应区域这条路没戏了。。。继续调研，发现iOS7提供了新的API可以很轻松的实现viewController之间的转场动画。</p>
+
+<p>综上所述，我们的目标就是通过新的API来自己实现一个和系统自带返回效果基本一样的动画，并将手势作用范围扩大到整个view,不再局限在左侧一小块儿区域。</p>
+
+<p>iOS7里在UINavigationDelegate中新加入了两个delegate方法</p>
+
+<p>```
+//WYNavigationController.m
+&ndash; (id<UIViewControllerAnimatedTransitioning>)</p>
+
+<pre><code>               navigationController:(UINavigationController *)navigationController
+    animationControllerForOperation:(UINavigationControllerOperation)operation
+                 fromViewController:(UIViewController*)fromVC
+                   toViewController:(UIViewController*)toVC
+</code></pre>
+
+<p>{</p>
+
+<pre><code>if (operation == UINavigationControllerOperationPush) {
+    return self.animator;
+}
+return nil;
+</code></pre>
+
+<p>}
+<code>``
+可以通过这个delegate返回自定义的动画，operation可以为</code>UINavigationControllerOperationPush<code>或</code>UINavigationControllerOperationPop<code>分别表示navigationController的push和pop操作，</code>fromViewController<code>和</code>toViewController<code>就是动画的第一个和第二个页面。 返回值是一个需要实现</code>UIViewControllerAnimatedTransitioning`协议的对象，这个对象就是决定整个动画形态的对象。我们可以看看这个协议里面包含了哪些接口：</p>
+
+<p>```
+&ndash; (NSTimeInterval)transitionDuration:(id <UIViewControllerContextTransitioning>)transitionContext;</p>
+
+<ul>
+<li>(void)animateTransition:(id<UIViewControllerContextTransitioning>)transitionContext;
+```
+第一个是返回这个动画持续的时间，第二个里面就是要写具体的动画实现。所以我们要自定义我们的pop动画最主要的工作就是实现以下这里。
+接下来就开始写这个动画了。</li>
+</ul>
+
+
+<h3>实现一个类系统的返回动画</h3>
+
+<p>实现之前我们先明确以下目标，仔细观察下系统的返回动画的过程，总结几个点如下（）：</p>
+
+<ul>
+<li>动画过程中from页面盖在to页面上</li>
+<li>动画开始from页面x值为0，to页面x值为差不多负的四分之一个屏幕宽度</li>
+<li>动画最终的时候from消失x值等于整个屏幕宽度，to页面完全显示出来x值为0</li>
+<li>from页面左侧会有几个像素宽的小阴影</li>
+</ul>
+
+
+<p>所以我们定义一个类并实现<code>UIViewControllerAnimatedTransitioning</code>协议</p>
+
+<p>```
+@interface WYPageTransitionAnimator : NSObject <UIViewControllerAnimatedTransitioning></p>
+
+<p>@end</p>
+
+<p>@implementation WYPageTransitionAnimator</p>
+
+<ul>
+<li><p>(NSTimeInterval)transitionDuration:(id <UIViewControllerContextTransitioning>)transitionContext {
+  return 0.25;
+}</p></li>
+<li><p>(void)animateTransition:(id<UIViewControllerContextTransitioning>)transitionContext {
+  UIViewController <em>toViewController = [transitionContext viewControllerForKey:UITransitionContextToViewControllerKey];
+  UIViewController </em>fromViewController = [transitionContext viewControllerForKey:UITransitionContextFromViewControllerKey];</p>
+
+<p>  UIView <em>toView = toViewController.view;
+  UIView </em>fromView = fromViewController.view;</p>
+
+<p>  toView.left = -SCREEN_WIDTH*&frac14;;
+  [[transitionContext containerView] addSubview:toView];
+  [[transitionContext containerView] addSubview:fromView];</p>
+
+<p>  [UIView animateWithDuration:[self transitionDuration:transitionContext] animations:^{
+      toView.right = SCREEN_WIDTH;
+      fromView.left = SCREEN_WIDTH;
+  } completion:^(BOOL finished) {
+      [transitionContext completeTransition:![transitionContext transitionWasCancelled]];
+  }];
+}</p></li>
+</ul>
+
+
+<p>@end
+<code>``
+以上基本就完成了动画的部分，是不是很简单。接下来就是给fromView左边加上一抹阴影，这个需要在另一个</code>UINavigationControllerDelegate`中处理了：</p>
+
+<p>```
+//WYNavigationController.m</p>
+
+<p>@implementation WYNavigationController
+&hellip;</p>
+
+<ul>
+<li><p>(void)navigationController:(UINavigationController <em>)navigationController willShowViewController:(UIViewController </em>)viewController animated:(BOOL)animated {</p>
+
+<p>  CAGradientLayer *shadow = [CAGradientLayer layer];
+  shadow.frame = CGRectMake(-6, 0, 6, viewController.view.frame.size.height);
+  shadow.startPoint = CGPointMake(1.0, 0.5);
+  shadow.endPoint = CGPointMake(0, 0.5);
+  shadow.colors = [NSArray arrayWithObjects:(id)[[UIColor colorWithWhite:0.0 alpha:0.2f] CGColor], (id)[[UIColor clearColor] CGColor], nil];
+  [viewController.view.layer addSublayer:shadow];
+}</p></li>
+</ul>
+
+
+<p>&hellip;
+@end
+```</p>
+
+<p>这个时候应用上我们要做的动画的部分基本完成了。</p>
+
+<h3>为动画添加交互</h3>
+
+<p>上面做的只完成了一半，因为我们还没有加上我们的手势，让我们的动画可以跟着手势动起来。我们再来看看<code>UINavigationControllerDelegate</code>的另一个delegate方法：</p>
+
+<p>```
+&ndash; (id <UIViewControllerInteractiveTransitioning>)navigationController:(UINavigationController *)navigationController interactionControllerForAnimationController:(id <UIViewControllerAnimatedTransitioning>) animationController {</p>
+
+<pre><code>return self.interactionController;
+</code></pre>
+
+<p>}
+<code>``
+这个delegate返回的一个对象就是用来控制动画执行的，系统已经有一个类可以直接用，我们只要生成一个</code>UIPercentDrivenInteractiveTransition`类型的对象就行。
+接下来我们还要在navigationController的view上添加一个pan手势，然后将pan和这个interactionController关联起来。具体代码如下：</p>
+
+<p>```
+//WYNavigationController.m</p>
+
+<p>@implementation WYNavigationController
+&hellip;</p>
+
+<ul>
+<li><p>(void)viewDidLoad {
+  [super viewDidLoad];</p>
+
+<p>  <em>panRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(handlePanGesture:)];
+  </em>panRecognizer.delegate = self;
+  [self.view addGestureRecognizer:_panRecognizer];
+  self.animator = [[WYPageTransitionAnimator alloc] init];
+}</p></li>
+<li><p>(void)handlePanGesture:(UIPanGestureRecognizer *)recognizer {
+  switch (recognizer.state) {
+      case UIGestureRecognizerStateBegan:
+      {
+          if (self.viewControllers.count > 1) {
+              self.interactionController = [[UIPercentDrivenInteractiveTransition alloc] init];
+              [self popViewControllerAnimated:YES];
+          }
+      }
+          break;
+      case UIGestureRecognizerStateChanged:
+      {
+          CGPoint translation = [recognizer translationInView:self.view];
+          CGFloat percent = fabs(MAX(0, translation.x) / CGRectGetWidth(self.view.bounds));
+          [self.interactionController updateInteractiveTransition:percent];
+      }
+          break;
+      case UIGestureRecognizerStateEnded:
+      {
+          CGPoint translation = [recognizer translationInView:self.view];
+          CGFloat speed = [recognizer velocityInView:self.view].x;
+          if (translation.x > self.view.frame.size.width/2 || speed > 100) {
+              [self.interactionController finishInteractiveTransition];
+          } else {
+              [self.interactionController cancelInteractiveTransition];
+          }
+          self.interactionController = nil;
+      }
+          break;</p>
+
+<pre><code>  case UIGestureRecognizerStateCancelled:
+  {
+      [self.interactionController cancelInteractiveTransition];
+      self.interactionController = nil;
+  }
+      break;
+
+  default:
+      break;
+</code></pre>
+
+<p>  }
+}</p></li>
+</ul>
+
+
+<p>&hellip;
+@end
+```</p>
+
+<p>简单讲下以上的代码，给navigationController.View添加一个pan手势，然后根据pan滑动的距离计算一个百分比通过<code>[self.interactionController updateInteractiveTransition:percent]</code>来执行前面我们指定的那个2.5秒的动画，相当于我们手势滑动了多少，对应的那个动画就执行多少比率，当我们放开手<code>UIGestureRecognizerStateEnded</code>的时候，判断一下我们滑动的速度以及滑动的距离来完成余下的动画<code>[self.interactionController finishInteractiveTransition]</code>或者撤销整个动画<code>[self.interactionController cancelInteractiveTransition]</code></p>
+
+<p>至此，整个交互式pop动画就完成了，使用新的API来做整个过程都是很容易实现的。然后运行一下我们的代码，可以看到效果真的跟系统自带的pop动画相差无几了，而且因为作用范围更广了，所以更好用了。</p>
+
+<h3>一些需要优化的问题</h3>
+
+<p>其实这篇文档最有价值的部分才刚刚开始，上面只是给大家介绍了一下用新的API快速实现这个效果。真正用起来后我碰到了一些问题，然后自己琢磨除了一些解决办法。</p>
+
+<h4>tabbar问题</h4>
+
+<p>很多应用都会有<code>UITabbarViewController</code>，而且为了节省空间，会在push的时候通过设置<code>ViewController.hidesBottomBarWhenPushed = YES</code>来隐藏tabbar,在使用上述自定义动画的时候会发现tabbar再返回的时候会显示不正常。解决这个问题的基本思路就是，把tabbar和toView、fromView一样对待也添加到那个处理动画的<code>containerView</code>中,然后设置动画开始和最终的frame。不过这么做了之后你会发现tabbar在你完成动画之后不见了，我当时就卡在这个bug这里很久，后来经一个同事提醒得到这么一个以前没注意到的东西，那就是“一个view同一时间只能被加到一个view之上”，因为tabbar刚刚被我们加入到了containerView中，所以它就会从tabbarViewController.view中移走。因此，在动画的competition里我们还得吧tabbar加回到tabbarViewController.view中去。  加回去后你会发现高度出错了，这个比较好解，你在做动画之前先记住tabbar的top,然后在它加回去的时候重新设置下就行了。（觉得我表达的不够清楚的话，看代码吧）</p>
+
+<h4>navigationbar hidden的问题</h4>
+
+<p>还有一个大问题就是，push两边<code>navigationbar</code>有一个是隐藏的活着两个都是隐藏的，这个时候你就会发现上面的动画会有UI上的bug。经过观察发现，在有无<code>navigationbar</code>的情况下，toView或fromView在加到<code>containerView</code>中的frame不一样。所以解决的办法就是在做动画之前根据两个View有无navigationBar的情况分别处理下他们的frame。</p>
+
+<p>在判断navigationBar是否是隐藏的，不能根据<code>toView.NavigationController.navigationBarHidden</code>或者<code>fromView.NavigationController.navigationBarHidden</code>，因为这两个都是指向同一<code>navigationBar</code>，所以任何时刻这两个值都是一样的，就无法区分哪个是有哪个是隐藏的。因此，我是这么做的，写了一个UIViewController的扩展方法来返回navigationBar的隐藏情况，默认返回YES,需要隐藏的页面复写下这个方法并返回正确地状态就行了。</p>
+
+<p>```
+//UIViewControllerAdditions.m</p>
+
+<p>@implementation UIViewController (Addtions)
+&hellip;</p>
+
+<ul>
+<li>(BOOL)hasNavigationBar {
+  return YES;
+}</li>
+</ul>
+
+
+<p>&hellip;
+@end
+```</p>
+
+<h4>禁用动画</h4>
+
+<p>对了，还有一个要能满足的就是能自定义是否启用这个返回动画，因为这个pan手势可能会跟一些页面的手势有冲突，不如目标页面是一个横向的scrollView。具体做法也是在UIViewController加一个扩展方法来返回是否需要该返回动画，默认也是返回YES。需要特殊处理的页面，复用该方法在不同情况返回不同的值就行了。然后，在pan方法的回调里根据返回来觉得手势手否响应。</p>
+
+<p>```
+//UIViewControllerAdditions.m</p>
+
+<p>@implementation UIViewController (Addtions)
+&hellip;</p>
+
+<ul>
+<li>(BOOL)popTransitionSupport {
+  return YES;
+}</li>
+</ul>
+
+
+<p>&hellip;
+@end</p>
+
+<p>//WYNavigationController.m</p>
+
+<p>@implementation WYNavigationController
+&hellip;</p>
+
+<ul>
+<li>(BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
+  return self.viewControllers.count > 1 &amp;&amp; [self.topViewController popTransitionSupport];
+}</li>
+</ul>
+
+
+<p>&hellip;
+@end</p>
+
+<h2>```</h2>
+
+<p>附上完整demo地址（<a href="https://github.com/wangyang10/CustomPopAnimation">点击这里</a>），本文的示例代码均包含在其中，欢迎大家提出bug。</p>
+]]></content>
+  </entry>
+  
+</feed>

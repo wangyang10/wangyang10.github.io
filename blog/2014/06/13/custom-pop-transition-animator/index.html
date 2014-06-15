@@ -1,24 +1,81 @@
-<?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[洋哥de秘密基地]]></title>
-  <link href="http://wangyang10.github.io/atom.xml" rel="self"/>
-  <link href="http://wangyang10.github.io/"/>
-  <updated>2014-06-15T18:37:27+08:00</updated>
-  <id>http://wangyang10.github.io/</id>
-  <author>
-    <name><![CDATA[洋哥]]></name>
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>iOS7自定义页面转换动画 - 洋哥de秘密基地</title>
+	<meta name="author" content="洋哥">
+
+	
+	<meta name="description" content="我们知道iOS7中navigationController中多了一个属性interactivePopGestureRecognizer，它带来了一个交互式的pop动画。让我们不用再去很费劲的自己实现一些pop效果，带来了很大的方便。不过这个系统自带的返回手势也有它局限的地方， &hellip;">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="洋哥de秘密基地" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script async="true" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	
+</head>
+
+
+<body>
+	<header id="header" class="inner"><h1><a href="/">洋哥de秘密基地</a></h1>
+<nav id="main-nav"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.google.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:wangyang10.github.io">
+			</form>
+		</div>
+	</div>
+</nav>
+<nav id="sub-nav" class="alignright">
+	<div class="social">
+		
+		
+		
+		
     
-  </author>
-  <generator uri="http://octopress.org/">Octopress</generator>
+		
+		
+		
+		
+		
+		<a class="rss" href="/atom.xml" title="RSS">RSS</a>
+		
+    
+	</div>
+	<form class="search" action="https://www.google.com/search" method="get">
+		<input class="alignright" type="text" name="q" results="0">
+		<input type="hidden" name="q" value="site:wangyang10.github.io">
+	</form>
+</nav>
 
-  
-  <entry>
-    <title type="html"><![CDATA[iOS7自定义页面转换动画]]></title>
-    <link href="http://wangyang10.github.io/blog/2014/06/13/custom-pop-transition-animator/"/>
-    <updated>2014-06-13T10:52:49+08:00</updated>
-    <id>http://wangyang10.github.io/blog/2014/06/13/custom-pop-transition-animator</id>
-    <content type="html"><![CDATA[<p>我们知道iOS7中navigationController中多了一个属性<code>interactivePopGestureRecognizer</code>，它带来了一个交互式的pop动画。让我们不用再去很费劲的自己实现一些pop效果，带来了很大的方便。不过这个系统自带的返回手势也有它局限的地方，比如如果定制了navigationBar的leftItem,该手势就会失效（可以通过重设该gesture的delegate来解决，不过随之而来会导致另外一些问题，详情以及解决方案看<a href="http://keighl.com/post/ios7-interactive-pop-gesture-custom-back-button/">这里</a>）。   还有一个有点缺陷的地方就是，这个手势的响应区只有在屏幕左侧一点点的区域。</p>
+</header>
+	
+		
+	
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">iOS7自定义页面转换动画</h2>
+	<div class="entry-content"><p>我们知道iOS7中navigationController中多了一个属性<code>interactivePopGestureRecognizer</code>，它带来了一个交互式的pop动画。让我们不用再去很费劲的自己实现一些pop效果，带来了很大的方便。不过这个系统自带的返回手势也有它局限的地方，比如如果定制了navigationBar的leftItem,该手势就会失效（可以通过重设该gesture的delegate来解决，不过随之而来会导致另外一些问题，详情以及解决方案看<a href="http://keighl.com/post/ios7-interactive-pop-gesture-custom-back-button/">这里</a>）。   还有一个有点缺陷的地方就是，这个手势的响应区只有在屏幕左侧一点点的区域。</p>
 
 <p>所以我一开始想能不能通过扩大<code>interactivePopGestureRecognizer</code>的响应区域来解决问题，调研后发现该手势的实际类型是<code>UIScreenEdgePanGestureRecognizer</code>，这个类型的手势响应区域就是在4个方向的侧边一小块儿地方，想扩大响应区域这条路没戏了。。。继续调研，发现iOS7提供了新的API可以很轻松的实现viewController之间的转场动画。</p>
 
@@ -411,22 +468,85 @@
 <hr />
 
 <p>附上完整demo地址（<a href="https://github.com/wangyang10/CustomPopAnimation">点击这里</a>），本文的示例代码均包含在其中，欢迎大家提出bug。</p>
-]]></content>
-  </entry>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
   
-  <entry>
-    <title type="html"><![CDATA[开始]]></title>
-    <link href="http://wangyang10.github.io/blog/2014/05/22/the-beginning/"/>
-    <updated>2014-05-22T20:04:54+08:00</updated>
-    <id>http://wangyang10.github.io/blog/2014/05/22/the-beginning</id>
-    <content type="html"><![CDATA[<h2>洋哥de秘密基地</h2>
 
-<p>洋哥的秘密基地正式成立啦，很开心，也很兴奋。终于有了自己的一块地方来记录一些有意思的东西，关于技术，关于生活。工作一年最大的感觉就是很多东西都没有积累下来，于是萌生了一个写写博客的念头，让自己平常学的看的东西能够有序的保存下来，或许也能帮助到其他朋友吧。可能也会写写生活的感受吧，开心的不开心的。很久以后再回过来看的时候应该会很有意思吧。</p>
 
-<h2>关于洋哥</h2>
+<time datetime="2014-06-13T10:52:49+08:00" pubdate data-updated="true">Jun 13<span>th</span>, 2014</time></div>
+	<div class="tags">
 
-<p>洋哥是一个刚毕业的90后，阳光，可爱，喜欢唱歌。目前在一家互联网公司从事iOS开发。</p>
-]]></content>
-  </entry>
-  
-</feed>
+
+	<a class='category' href='/blog/categories/ios7/'>iOS7</a>
+
+
+</div>
+	
+</div>
+</article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+		
+		
+		
+		
+	</div>
+	
+</div>
+
+
+
+
+<section id="comment">
+	<div id="duoshuo" aria-live="polite"><!-- 多说评论框 start -->
+	<div class="ds-thread"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+		var duoshuoQuery = {short_name:"wangyang10"};
+			(function() {
+						var ds = document.createElement('script');
+								ds.type = 'text/javascript';ds.async = true;
+										ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+												ds.charset = 'UTF-8';
+														(document.getElementsByTagName('head')[0] 
+																 || document.getElementsByTagName('body')[0]).appendChild(ds);
+																	})();
+																		</script>
+																		<!-- 多说公共JS代码 end -->
+</div>
+</section>
+
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2014
+
+    洋哥
+
+</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+
+
+
+
+</body>
+</html>
